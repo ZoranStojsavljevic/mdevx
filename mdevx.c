@@ -21,9 +21,12 @@
 #include <sys/ioctl.h>
 
 // Prototypes
-unsigned convert ( char* argS, int charFlag, int *count);
+unsigned convert(char* argS, int charFlag, int *count);
 char *sgets(char *line, size_t size);
-unsigned char HexToBin ( char in );
+unsigned char HexToBin(char in);
+unsigned int hex_to_int(char c);
+unsigned int hex_to_ascii(char c, char d);
+char *intochar(unsigned int x, char *buf);
 
 /*******************************************************************************
 *   function   int main ( int argc, char **argv )
@@ -55,9 +58,9 @@ int main ( int argc, char** argv )
 	    "--------------------------------------------------------------------------------\n"
 	    " Usage: %s <addr> <data>       (for writing tool expects 2, 4 or 8 nibbles exact)\n"
 	    " Usage: %s <addr> <format> <#> (for # (default 1) reading, format is b/h/w)\n"
-	    " Usage: %s <addr>              (interractive mode, 8 nibbles exact for <addr>)\n"
-	    " Interractive mode: <offset> <data/format> (description for data/format above)\n"
-	    " Interractive mode: <cr>          (repeat previous format by entering <cr>)\n"
+	    " Usage: %s <addr>              (interactive mode, 8 nibbles exact for <addr>)\n"
+	    " Interactive mode: <offset> <data/format> (description for data/format above)\n"
+	    " Interactive mode: <cr>             (repeat previous format by entering <cr>)\n"
 	    "--------------------------------------------------------------------------------\n";
 
 	if ( (4 < argc) || (2 > argc) )
@@ -92,7 +95,7 @@ int main ( int argc, char** argv )
 		}
 
 		while(1) {
-		    printf ("[base address 0x%x], offset <data|b/h/w>? ", h_address);
+		    printf ("[base address 0x%x], <offset> <data|b/h/w>? ", h_address);
 		    inputPtr = sgets(&input[0], sizeof(input));
 
 		    if ( '\0' == inputPtr[0] ) {
@@ -118,7 +121,7 @@ int main ( int argc, char** argv )
 
 			while (' ' != *inputPtr) {
 			    if ( '\0' == *inputPtr ) {
-			        printf("Terminating interractive mode\n");
+			        printf("Terminating interactive mode\n");
 				if (mem_fd >= 0) close (mem_fd);
 				return 0;
 			    }
@@ -197,13 +200,13 @@ int main ( int argc, char** argv )
 
 	if( 3 == argc ) {
 	    if ( 'w' == l_option ) {
-	        printf("32 bit data read [%p] = 0x%08x\n", (void *)address, *(unsigned *)virtualAddress);
+		printf("32 bit data read [%p] = 0x%08x\n", (void *)address, *(unsigned *)virtualAddress);
 	    }
 	    else if ( 'h' == l_option ) {
-	        printf("16 bit data read [%p] = 0x%04x\n", (void *)address, *(unsigned short *)virtualAddress);
+		printf("16 bit data read [%p] = 0x%04x\n", (void *)address, *(unsigned short *)virtualAddress);
 	    }
 	    else if ( 'b' == l_option ) {
-	        printf(" 8 bit data read [%p] = 0x%02x\n", (void *)address, *(unsigned char *)virtualAddress);
+		printf(" 8 bit data read [%p] = 0x%02x\n", (void *)address, *(unsigned char *)virtualAddress);
 	    }
 	    else {
 		data = convert (argPtr, 0, &numb_char);
@@ -228,14 +231,14 @@ int main ( int argc, char** argv )
 	else { //
 	    dataSize = atoi(argv[3]);
 	    if (0 == dataSize) {
-	        printf ( help_text, argv[0], argv[0], argv[0] );
+		printf ( help_text, argv[0], argv[0], argv[0] );
 		return -10;
 	    }
 	    if ( 'w' == l_option ) {
-	        while (0 < dataSize) {
+		while (0 < dataSize) {
 		    printf("\n%p  ", (void *)address); // , *(unsigned *)virtualAddress);
 		    for(i=0; i < 4; i++) {
-		        printf("0x%08x ", *(unsigned *)virtualAddress);
+			printf("0x%08x ", *(unsigned *)virtualAddress);
 			virtualAddress +=4;
 		    }
 		    address += 16;
@@ -243,10 +246,17 @@ int main ( int argc, char** argv )
 		}
 	    }
 	    else if ( 'h' == l_option ) {
-	        while (0 < dataSize) {
+		while (0 < dataSize) {
 		    printf("\n%p  ", (void *)address);
-		    for(i=0; i < 8; i++) {
-		        printf("0x%04x ", *(unsigned short *)virtualAddress);
+		    for(i=0; i < 4; i++) {
+			printf("0x%04x ", *(unsigned short *)virtualAddress);
+			virtualAddress +=2;
+		    }
+
+		    printf("- ");
+
+		    for(; i < 8; i++) {
+			printf("0x%04x ", *(unsigned short *)virtualAddress);
 			virtualAddress +=2;
 		    }
 		    address += 16;
@@ -254,12 +264,25 @@ int main ( int argc, char** argv )
 		}
 	    }
 	    else if ( 'b' == l_option ) {
-	        while (0 < dataSize) {
+		char buffer[128];
+
+		while (0 < dataSize) {
 		    printf("\n%p  ", (void *)address);
-		    for(i=0; i < 16; i++) {
-		        printf("0x%02x ", *(unsigned char *)virtualAddress);
+		    for(i=0; i < 8; i++) {
+			printf("0x%02x ", *(unsigned char *)virtualAddress);
+			intochar(*(unsigned char *)virtualAddress, buffer);
 			virtualAddress++;
 		    }
+
+		    printf("- ");
+
+		    for(; i < 16; i++) {
+			printf("0x%02x ", *(unsigned char *)virtualAddress);
+			intochar(*(unsigned char *)virtualAddress, buffer);
+			virtualAddress++;
+		    }
+		    printf("%s", buffer);
+		    buffer[0] = '\0';
 		    address += 16;
 		    dataSize -= 16;
 		}
@@ -276,56 +299,73 @@ int main ( int argc, char** argv )
 }
 
 // Safe version of gets
-char *sgets(char *line, size_t size)
+char *sgets (char *line, size_t size)
 {
-    size_t   i;
+	size_t   i;
 
-    for (i = 0; i < size - 1; ++i) {
-        int ch = fgetc(stdin);
-	if (ch == '\n' || ch == EOF) {
-	    break;
-	}
+	for (i = 0; i < size - 1; ++i) {
+		int ch = fgetc(stdin);
+		if (ch == '\n' || ch == EOF)
+			break;
 
-	// Added to handle <BS> in command line!
-	if ('\b' == ch) {
-	  if (0 != i) i--;
+		// Added to handle <BS> in command line!
+		if ('\b' == ch) {
+			if (0 != i)
+				i--;
+		}
+		else line[i] = ch;
 	}
-	else line[i] = ch;
-    }
-    line[i] = '\0';
-    return line;
+	line[i] = '\0';
+
+	return line;
 }
 
-unsigned convert ( char* argS, int charFlag, int *count)
+unsigned convert (char* argS, int charFlag, int *count)
 {
-    unsigned   k, j, data = 0;
+	unsigned   k, j, data = 0;
 
-    if ( strstr ( argS, "0x" ) ) {        // hex
-        for(j=0; '\0'!=argS[j]; j++);
-	k = j;
+	if (strstr (argS, "0x")) {        // hex
+		for(j=0; '\0'!=argS[j]; j++);
+			k = j;
 
-	for(j=2; j<k; j++) {
-	    data |= HexToBin ( argS[j] ) << ((k-j-1) << 2);
-	    // printf ( "data[%d] = [0x%x]\n", j, data );
+		for(j=2; j<k; j++) {
+			data |= HexToBin ( argS[j] ) << ((k-j-1) << 2);
+			// printf ("data[%d] = [0x%x]\n", j, data);
+		}
+		*count = k-2;
 	}
-	*count = k-2;
-    }
-    else if (charFlag) {
-        data = atoi ( argS );
-	*count = 8;
-    }
-    else *count = 0;
+	else if (charFlag) {
+		data = atoi(argS);
+		*count = 8;
+	}
+	else *count = 0;
 
-    return data;
+	return data;
 }
 
-unsigned char HexToBin ( char in )
-{
-    if ( in >= 'a' )
-        in -= 'a' - 10;
-    else if ( in >= 'A' )
-        in -= 'A' - 10;
-    else
-        in -= '0';
-    return( (unsigned char)(in & 0xF) );
+unsigned char HexToBin (char in) {
+	if (in >= 'a')
+		in -= 'a' - 10;
+	else if (in >= 'A')
+		in -= 'A' - 10;
+	else
+		in -= '0';
+
+	return((unsigned char)(in & 0xF));
+}
+
+char *intochar(unsigned int x, char *buf) {
+	char	*local_buffer = buf;
+	char	temp_buffer[8];
+
+	if (32 > x)
+		strcat(buf, ".");
+	else if (x < 128) {
+		sprintf(temp_buffer, "%c", x);
+		strcat(buf, temp_buffer);
+	}
+	else
+		strcat(buf, ".");
+
+	return local_buffer;
 }
