@@ -20,6 +20,8 @@
 #include <sys/mman.h>
 #include <sys/ioctl.h>
 
+#define MEM_SIZE 0x10000
+
 // Prototypes
 unsigned convert(char* argS, int charFlag, int *count);
 char *sgets(char *line, size_t size);
@@ -88,8 +90,10 @@ int main ( int argc, char** argv )
 		}
 
 		/* Map physical address to user space */
-		virtualAddress = localAddress = (unsigned char *) mmap (0, 0x10000, PROT_READ | PROT_WRITE, MAP_SHARED, mem_fd, h_address);
+		virtualAddress = localAddress = (unsigned char *) mmap (0, MEM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, mem_fd, h_address);
 		if ( MAP_FAILED == localAddress ) {
+		    munmap(localAddress, MEM_SIZE);
+		    if (mem_fd >= 0) close (mem_fd);
 		    printf ( "Cannot access MBAR memory address range.\n" );
 		    return -4;
 		}
@@ -122,6 +126,7 @@ int main ( int argc, char** argv )
 			while (' ' != *inputPtr) {
 			    if ( '\0' == *inputPtr ) {
 			        printf("Terminating interactive mode\n");
+				munmap(localAddress, MEM_SIZE);
 				if (mem_fd >= 0) close (mem_fd);
 				return 0;
 			    }
@@ -168,11 +173,14 @@ int main ( int argc, char** argv )
 			    }
 			    else {
 			        printf ( help_text, argv[0], argv[0], argv[0] );
+				munmap(localAddress, MEM_SIZE);
+				if (mem_fd >= 0) close (mem_fd);
 				return -5;
 			    }
 			}
 		    }
 		}
+		munmap(localAddress, MEM_SIZE);
 	    }
 	    else {
 	        printf ( help_text, argv[0], argv[0], argv[0] );
@@ -188,9 +196,11 @@ int main ( int argc, char** argv )
 	}
 
 	/* Map physical address to user space */
-	virtualAddress = (unsigned char *) mmap (0, 0x10000, PROT_READ | PROT_WRITE, MAP_SHARED, mem_fd, h_address);
-	if ( MAP_FAILED == virtualAddress ) {
+	virtualAddress = localAddress = (unsigned char *) mmap (0, MEM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, mem_fd, h_address);
+	if ( MAP_FAILED == localAddress ) {
 	    printf ( "Cannot access MBAR memory address range.\n" );
+	    munmap(localAddress, MEM_SIZE);
+	    if (mem_fd >= 0) close (mem_fd);
 	    return -8;
 	}
 	virtualAddress += l_address;
@@ -223,14 +233,18 @@ int main ( int argc, char** argv )
 		    printf("16 bit data written [%p] = 0x%04x\n", (void *)address, data);
 		}
 		else {
+		    munmap(localAddress, MEM_SIZE);
+		    if (mem_fd >= 0) close (mem_fd);
 		    printf ( help_text, argv[0], argv[0], argv[0] );
 		    return -9;
 		}
 	    }
 	}
-	else { //
+	else {
 	    dataSize = atoi(argv[3]);
 	    if (0 == dataSize) {
+		munmap(localAddress, MEM_SIZE);
+		if (mem_fd >= 0) close (mem_fd);
 		printf ( help_text, argv[0], argv[0], argv[0] );
 		return -10;
 	    }
@@ -288,13 +302,17 @@ int main ( int argc, char** argv )
 		}
 	    }
 	    else {
+		munmap(localAddress, MEM_SIZE);
+		if (mem_fd >= 0) close (mem_fd);
 		printf ( help_text, argv[0], argv[0], argv[0] );
 		return -11;
 	    }
 	}
 	printf("\n\n");
 
+	munmap(localAddress, MEM_SIZE);
 	if (mem_fd >= 0) close (mem_fd);
+
 	return 0;
 }
 
