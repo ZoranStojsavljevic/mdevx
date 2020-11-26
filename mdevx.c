@@ -92,7 +92,6 @@ int main ( int argc, char** argv )
 		/* Map physical address to user space */
 		virtualAddress = localAddress = (unsigned char *) mmap (0, MEM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, mem_fd, h_address);
 		if ( MAP_FAILED == localAddress ) {
-		    munmap(localAddress, MEM_SIZE);
 		    if (mem_fd >= 0) close (mem_fd);
 		    printf ( "Cannot access MBAR memory address range.\n" );
 		    return -4;
@@ -198,9 +197,8 @@ int main ( int argc, char** argv )
 	/* Map physical address to user space */
 	virtualAddress = localAddress = (unsigned char *) mmap (0, MEM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, mem_fd, h_address);
 	if ( MAP_FAILED == localAddress ) {
-	    printf ( "Cannot access MBAR memory address range.\n" );
-	    munmap(localAddress, MEM_SIZE);
 	    if (mem_fd >= 0) close (mem_fd);
+	    printf ( "Cannot access MBAR memory address range.\n" );
 	    return -8;
 	}
 	virtualAddress += l_address;
