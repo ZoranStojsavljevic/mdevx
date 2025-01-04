@@ -1,14 +1,17 @@
-/*******************************************************************************
-* FILENAME: mdevx.c
-* AUTHOR:   Zoran Stojsavljevic
-* CREATED:  Y2008
-*
-* Copyright (c) 2008 - 2020 Zoran Stojsavljevic. All rights reserved.
-*
-* GNU General Public License v3.0
-*
-* DESCRIPTION: This is a stand alone TEST application/CLI tool to test drivers.
-*******************************************************************************/
+/*
+ * FILENAME:	mdevx.c
+ * AUTHOR:	Zoran Stojsavljevic
+ * CREATED:	Y2008
+ *
+ * Copyright (c) 2008 - 2025 Zoran Stojsavljevic.
+ * All rights reserved.
+ *
+ * GNU GENERAL PUBLIC LICENSE
+ *  Version 3, 29 June 2007
+ *
+ * DESCRIPTION: This is a standalone TEST application/CLI
+ * tool to test drivers.
+ */
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,7 +23,8 @@
 #include <sys/mman.h>
 #include <sys/ioctl.h>
 
-#define MEM_SIZE 0x10000
+// 4096 bytes mapped
+#define MEM_SIZE 0x1000
 
 // Prototypes
 unsigned convert(char* argS, int charFlag, int *count);
@@ -34,7 +38,7 @@ char *intochar(unsigned int x, char *buf);
 *   function   int main ( int argc, char **argv )
 *   author     Zoran Stojsavljevic
 *
-*   Copyright (c) 2008 - 2020 Zoran Stojsavljevic. All rights reserved.
+*   Copyright (c) 2008 - 2025 Zoran Stojsavljevic. All rights reserved.
 *
 *   GNU General Public License v3.0
 *
@@ -42,21 +46,21 @@ char *intochar(unsigned int x, char *buf);
 *******************************************************************************/
 int main ( int argc, char** argv )
 {
-        unsigned        address = 0;
-	int             dataSize, i;
-	unsigned        data = 0xfead;
-	char            input[32], arg1[32], arg2[32];
-	char            *argPtr, *inputPtr;
+	unsigned	address = 0;
+	int		dataSize, i;
+	unsigned	data = 0xfead;
+	char		input[32], arg1[32], arg2[32];
+	char		*argPtr, *inputPtr;
 
-	static int       mem_fd, numb_char;
-	unsigned char    *virtualAddress, *localAddress;
-	unsigned         h_address, l_address;
-	char             l_option='\0';
+	static int	mem_fd, numb_char;
+	unsigned char	*virtualAddress, *localAddress;
+	unsigned	h_address, l_address;
+	char		l_option='\0';
 
 	char help_text[] = \
 	    "--------------------------------------------------------------------------------\n"
 	    " Mdevx Read/Write Utility\n"
-	    " Copyright (c) 2008 - 2020 Zoran Stojsavljevic. All rights reserved.\n"
+	    " Copyright (c) 2008 - 2025 Zoran Stojsavljevic. All rights reserved.\n"
 	    "--------------------------------------------------------------------------------\n"
 	    " Usage: %s <addr> <data>       (for writing tool expects 2, 4 or 8 nibbles exact)\n"
 	    " Usage: %s <addr> <format> <#> (for # (default 1) reading, format is b/h/w)\n"
@@ -65,8 +69,7 @@ int main ( int argc, char** argv )
 	    " Interactive mode: <cr>             (repeat previous format by entering <cr>)\n"
 	    "--------------------------------------------------------------------------------\n";
 
-	if ( (4 < argc) || (2 > argc) )
-	{
+	if ( (4 < argc) || (2 > argc) ) {
 	    printf ( help_text, argv[0], argv[0], argv[0] );
 	    return -1;
 	}
@@ -92,7 +95,8 @@ int main ( int argc, char** argv )
 		/* Map physical address to user space */
 		virtualAddress = localAddress = (unsigned char *) mmap (0, MEM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, mem_fd, h_address);
 		if ( MAP_FAILED == localAddress ) {
-		    if (mem_fd >= 0) close (mem_fd);
+		    if (mem_fd >= 0)
+			close (mem_fd);
 		    printf ( "Cannot access MBAR memory address range.\n" );
 		    return -4;
 		}
@@ -126,7 +130,8 @@ int main ( int argc, char** argv )
 			    if ( '\0' == *inputPtr ) {
 			        printf("Terminating interactive mode\n");
 				munmap(localAddress, MEM_SIZE);
-				if (mem_fd >= 0) close (mem_fd);
+				if (mem_fd >= 0)
+				    close (mem_fd);
 				return 0;
 			    }
 			    *argPtr++ = *inputPtr++;
@@ -173,7 +178,8 @@ int main ( int argc, char** argv )
 			    else {
 			        printf ( help_text, argv[0], argv[0], argv[0] );
 				munmap(localAddress, MEM_SIZE);
-				if (mem_fd >= 0) close (mem_fd);
+				if (mem_fd >= 0)
+				    close (mem_fd);
 				return -5;
 			    }
 			}
@@ -197,7 +203,8 @@ int main ( int argc, char** argv )
 	/* Map physical address to user space */
 	virtualAddress = localAddress = (unsigned char *) mmap (0, MEM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, mem_fd, h_address);
 	if ( MAP_FAILED == localAddress ) {
-	    if (mem_fd >= 0) close (mem_fd);
+	    if (mem_fd >= 0)
+		close (mem_fd);
 	    printf ( "Cannot access MBAR memory address range.\n" );
 	    return -8;
 	}
@@ -232,7 +239,8 @@ int main ( int argc, char** argv )
 		}
 		else {
 		    munmap(localAddress, MEM_SIZE);
-		    if (mem_fd >= 0) close (mem_fd);
+		    if (mem_fd >= 0)
+			close (mem_fd);
 		    printf ( help_text, argv[0], argv[0], argv[0] );
 		    return -9;
 		}
@@ -242,7 +250,8 @@ int main ( int argc, char** argv )
 	    dataSize = atoi(argv[3]);
 	    if (0 == dataSize) {
 		munmap(localAddress, MEM_SIZE);
-		if (mem_fd >= 0) close (mem_fd);
+		if (mem_fd >= 0)
+		    close (mem_fd);
 		printf ( help_text, argv[0], argv[0], argv[0] );
 		return -10;
 	    }
@@ -301,7 +310,8 @@ int main ( int argc, char** argv )
 	    }
 	    else {
 		munmap(localAddress, MEM_SIZE);
-		if (mem_fd >= 0) close (mem_fd);
+		if (mem_fd >= 0)
+		    close (mem_fd);
 		printf ( help_text, argv[0], argv[0], argv[0] );
 		return -11;
 	    }
@@ -309,7 +319,8 @@ int main ( int argc, char** argv )
 	printf("\n\n");
 
 	munmap(localAddress, MEM_SIZE);
-	if (mem_fd >= 0) close (mem_fd);
+	if (mem_fd >= 0)
+	    close (mem_fd);
 
 	return 0;
 }
@@ -317,7 +328,7 @@ int main ( int argc, char** argv )
 // Safe version of gets
 char *sgets (char *line, size_t size)
 {
-	size_t   i;
+	size_t	i;
 
 	for (i = 0; i < size - 1; ++i) {
 		int ch = fgetc(stdin);
@@ -338,7 +349,7 @@ char *sgets (char *line, size_t size)
 
 unsigned convert (char* argS, int charFlag, int *count)
 {
-	unsigned   k, j, data = 0;
+	unsigned	k, j, data = 0;
 
 	if (strstr (argS, "0x")) {        // hex
 		for(j=0; '\0'!=argS[j]; j++);

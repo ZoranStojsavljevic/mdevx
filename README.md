@@ -1,28 +1,41 @@
 ### mdevx tool
 
-The tool called mdevx was developed in Year 2008 for Coldfire 7475 silicon.
+The tool called mdevx was developed in Year 2008 for Coldfire
+7475 silicon.
 
 https://www.rockbox.org/wiki/pub/Main/DataSheets/CFPRM.pdf
 
 #### Purpose
 
-mdevx is a simple command-line program used to read/write to hardware locations in a 32 bit Armv7-A architecture:
-ARM Cortex-A5, ARM Cortex-A7, ARM Cortex-A8, ARM Cortex-A9, ARM Cortex-A12, ARM Cortex-A15, ARM Cortex-A17
+mdevx is a simple user space command-line tool, used to read
+/write to hardware locations in a 32 bit Armv7-A and INTEL
+x86_64 architectures:
 
-It is a standalnoe tool.
+	ARM Cortex-A5
+	ARM Cortex-A7
+	ARM Cortex-A8
+	ARM Cortex-A9
+	ARM Cortex-A12
+	ARM Cortex-A15
+	ARM Cortex-A17
+	X86_64
 
-It it reccommended for the 32 bit MMU class of silicon: armv7, ColdFire and similar
-architectures.
+It is a standalone tool.
 
-It does similar functionality/job as the Open Source tool: devmem2
+It it reccommended for the 32 bit MMU class of silicon: armv7,
+ColdFire and similar architectures.
 
-https://github.com/hackndev/tools/blob/master/devmem2.c
+It does a similar functionality/job as the Open Source tool:
+devmem2 .
+
+* [devmem2](https://github.com/hackndev/tools/blob/master/devmem2.c)
 
 #### INTEL tool for similar purpose
 
-I strongly reccomment for x86 and x86_64 architecture the following tool:
+I strongly reccomment for x86 and x86_64 architecture the
+following tool:
 
-https://github.com/Intel-ADSC/samtool
+* [samtool](https://github.com/Intel-ADSC/samtool)
 
 #### Compiling and linking for armv7 architectures (on target platforms)
 
@@ -47,8 +60,10 @@ Usage is very simple - help built-in/included within the tool:
 
 #### Examples
 
-I reccommend to test the tool browsing BBB memory (from kernel source code, the file:
-<kernel_root_directory>/arch/arm/boot/dts/am335x-bone-common.dtsi
+I reccommend to test the tool browsing BBB memory (from kernel
+source code, the file:
+
+	<kernel_root_directory>/arch/arm/boot/dts/am335x-bone-common.dtsi
 
 	line 13:	memory@80000000 {
 	line 14:		device_type = "memory";
@@ -109,3 +124,4 @@ Memory dump example:
 	0x820000d0  0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 - 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 ................
 	0x820000e0  0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 - 0x2e 0x74 0x65 0x78 0x74 0x00 0x00 0x00 .........text...
 	0x820000f0  0x00 0x20 0x86 0x00 0x00 0x10 0x00 0x00 - 0x00 0x20 0x86 0x00 0x00 0x10 0x00 0x00 . ....... ......
+
